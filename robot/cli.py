@@ -43,7 +43,7 @@ def main(argv: list[str] | None = None) -> None:
             run_id=run_id,
         )
 
-    logging.info(
+    logging.getLogger(__name__).info(
         "run_done %s",
         kv(
             run_id=run_id,
