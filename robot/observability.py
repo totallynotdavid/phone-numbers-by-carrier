@@ -26,6 +26,10 @@ def new_run_id() -> str:
     return uuid.uuid4().hex[:12]
 
 
+def new_session_id() -> str:
+    return uuid.uuid4().hex[:10]
+
+
 def kv(**fields: object) -> str:
     parts: list[str] = []
     for key, value in fields.items():

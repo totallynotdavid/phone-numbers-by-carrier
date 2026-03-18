@@ -25,8 +25,8 @@ def read_rucs(path: Path, *, dedupe: bool = True) -> tuple[list[RUC], ReadStats]
     seen: set[str] = set()
     rucs: list[RUC] = []
 
-    with path.open(newline="", encoding="utf-8-sig") as f:
-        for row in csv.reader(f):
+    with path.open(newline="", encoding="utf-8-sig") as file_obj:
+        for row in csv.reader(file_obj):
             stats.rows_read += 1
             if not row or not row[0].strip():
                 stats.ignored += 1

@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 import logging
-import sys
 
-from robot import config
-from robot.batch.reader import read_rucs
-from robot.batch.runner import run
-from robot.batch.writer import OutputWriter, load_checkpoint
+import robot.config as config
+
 from robot.observability import configure_logging, kv, new_run_id
-from robot.osiptel.provider import OsiptelProvider
-from robot.provider import LineCountProvider
-from robot.snapshot.provider import SnapshotProvider
+from robot.runtime.orchestrator import run
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -18,46 +13,6 @@ def main(argv: list[str] | None = None) -> None:
     run_id = new_run_id()
 
     configure_logging(debug=cfg.debug)
-    logging.getLogger(__name__).info(
-        "run_start %s", kv(run_id=run_id, snapshot=cfg.use_snapshot)
-    )
+    logging.getLogger(__name__).info("run_start %s", kv(run_id=run_id))
 
-    rucs, read_stats = read_rucs(cfg.input_csv, dedupe=cfg.dedupe)
-    if not rucs:
-        sys.exit("no valid RUCs in input")
-
-    checkpoint = load_checkpoint(cfg.output_csv)
-    provider: LineCountProvider
-    if cfg.use_snapshot:
-        if cfg.snapshot_json is None:
-            msg = "--snapshot required with --snapshot-mode"
-            raise RuntimeError(msg)
-        provider = SnapshotProvider(cfg.snapshot_json)
-    else:
-        provider = OsiptelProvider.from_env(cfg.page_size)
-
-    with provider, OutputWriter(cfg.output_csv, cfg.output_mode) as writer:
-        summary = run(
-            rucs,
-            checkpoint,
-            provider,
-            writer,
-            cfg.concurrency,
-            read_stats,
-            run_id=run_id,
-        )
-
-    logging.getLogger(__name__).info(
-        "run_done %s",
-        kv(
-            run_id=run_id,
-            rows_read=summary.rows_read,
-            valid=summary.valid,
-            ignored=summary.ignored,
-            duplicates=summary.duplicates,
-            skipped=summary.skipped,
-            processed=summary.processed,
-            ok=summary.succeeded,
-            failed=summary.failed,
-        ),
-    )
+    run(cfg, run_id=run_id)
