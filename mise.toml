@@ -4,7 +4,7 @@ python = "3.14.3"
 ruff = "0.14.5"
 
 [tasks.install]
-run = "uv sync --all-packages"
+run = "uv pip install .[dev]"
 
 [tasks.update]
 run = "uv sync -U"
@@ -14,3 +14,6 @@ run = "uv pip list --outdated"
 
 [tasks.format]
 run = ["ruff format", "ruff check --fix"]
+
+[tasks.check]
+run = "uv run mypy ."
