@@ -108,6 +108,7 @@ class Worker:
             status=Status.FAILED,
             error_code="exhausted_retries",
             error_detail="unexpected retry exhaustion",
+            attempt=attempts,
         )
 
     def _execute_attempt(
@@ -137,6 +138,9 @@ class Worker:
             total_lines=total_lines,
             carrier_lines=carrier_lines,
             status=Status.OK,
+            attempt=attempt_no,
+            session_id=session.session_id,
+            proxy_id=session.proxy_id,
         )
 
     def _handle_failure(
@@ -173,6 +177,9 @@ class Worker:
             status=Status.FAILED,
             error_code=decision.error_code,
             error_detail=str(exc),
+            attempt=attempt_no,
+            session_id=session.session_id if session else "",
+            proxy_id=session.proxy_id if session else self._last_proxy_id,
         )
 
     def _ensure_session(self) -> BrowserSession:

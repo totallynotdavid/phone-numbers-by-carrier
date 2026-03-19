@@ -38,3 +38,6 @@ class Result:
     status: Status = Status.OK
     error_code: str = ""
     error_detail: str = ""
+    attempt: int = 0
+    session_id: str = ""
+    proxy_id: str = ""

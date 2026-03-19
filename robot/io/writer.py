@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import threading
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from robot.domain import RUC, CarrierLines, Status
@@ -15,7 +16,15 @@ if TYPE_CHECKING:
 
 
 SUCCESS_HEADERS = ["ruc", "carrier", "lines", "total_lines"]
-ERROR_HEADERS = ["ruc", "error_code", "error_detail"]
+ERROR_HEADERS = [
+    "ruc",
+    "error_code",
+    "error_detail",
+    "attempt",
+    "session_id",
+    "proxy_id",
+    "timestamp",
+]
 
 
 def load_checkpoint(path: Path) -> set[str]:
@@ -98,7 +107,15 @@ def _rows_for_result(
     result: Result,
 ) -> tuple[list[list[str | int]], list[str] | None]:
     if result.status == Status.FAILED:
-        return [], [str(result.ruc), result.error_code, result.error_detail]
+        return [], [
+            str(result.ruc),
+            result.error_code,
+            result.error_detail,
+            str(result.attempt),
+            result.session_id,
+            result.proxy_id,
+            datetime.now(UTC).isoformat(),
+        ]
 
     rows: list[list[str | int]] = []
     carriers = result.carrier_lines or (
