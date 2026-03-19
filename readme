@@ -20,7 +20,9 @@ Environment
    GEONODE_USER=<value>
    GEONODE_PASS=<value>
    GEONODE_TYPE=residential|datacenter|mix
+   GEONODE_PORT=10000-10900 (sticky HTTP range)
    GEONODE_COUNTRY=<country_code_or_empty>
+   GEONODE_LIFETIME=3..1440 (minutes)
 3. Optional (only if Chromium is not auto-detected):
    CHROME_BINARY=/absolute/path/to/chrome
 
@@ -28,17 +30,18 @@ Run
 
 Default behavior:
 - Success rows are appended to `out.csv`.
-- Failed rows are appended to `out.errors.csv`.
+- Failed rows are appended to `out.errors.csv` with attempt, session, proxy, and timestamp.
 - If `out.csv` already has RUCs, they are skipped automatically.
+- Sticky sessions are always used (one concurrent sticky session per worker).
 
 uv run robot \
   --input samples.csv \
   --output out.csv \
-  --workers 1 \
+  --workers 3 \
   --page-size 100 \
-  --session-budget 2 \
-  --wait-min-s 10 \
-  --wait-max-s 15 \
+  --session-budget 4 \
+  --wait-min-s 6 \
+  --wait-max-s 10 \
   --same-session-retries 1 \
   --ban-cooldown-s 180 \
   --env-file .env
