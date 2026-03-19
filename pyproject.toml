@@ -20,11 +20,10 @@ authors = [
 dev = ["mypy>=1.19.1"]
 
 [project.scripts]
-robot = "robot.cli:main"
-robot-v2 = "v2.app.cli:main"
+robot = "robot.app.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["robot*", "v2*"]
+include = ["robot*"]
 
 # ruff config
 [tool.ruff]
