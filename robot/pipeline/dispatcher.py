@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from robot.domain.types import RUC, LookupResult, RunSummary
 from robot.obs.logging import configure_logging, kv
+from robot.pipeline.messages import ResultMessage, WorkerDoneMessage
 from robot.pipeline.reader import ReadStats, enqueue_rucs
 from robot.pipeline.settings import WorkerSettings
 from robot.pipeline.worker import Worker
@@ -23,14 +24,6 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from robot.app.config import RunConfig
     from robot.io.writer import OutputWriter
-
-
-@dataclass(frozen=True)
-class WorkerDone:
-    worker_id: int
-    processed: int
-    succeeded: int
-    failed: int
 
 
 @dataclass(frozen=True)
@@ -51,7 +44,7 @@ def _worker_entry(
     run_id: str,
     geonode_env_file: str,
     task_queue: mp.JoinableQueue[RUC | None],
-    result_queue: mp.Queue[LookupResult | WorkerDone],
+    result_queue: mp.Queue[ResultMessage | WorkerDoneMessage],
     settings: WorkerSettings,
 ) -> None:
     configure_logging(debug=settings.debug)
@@ -59,7 +52,7 @@ def _worker_entry(
 
     class _QueueWriter:
         def write(self, result: LookupResult) -> None:
-            result_queue.put(result)
+            result_queue.put(ResultMessage(result=result))
 
     worker = Worker(
         worker_id=worker_id,
@@ -72,7 +65,7 @@ def _worker_entry(
     )
     summary = worker.run()
     result_queue.put(
-        WorkerDone(
+        WorkerDoneMessage(
             worker_id=worker_id,
             processed=summary.processed,
             succeeded=summary.succeeded,
@@ -129,7 +122,7 @@ def _start_workers(
     run_id: str,
     env_file: str,
     task_queue: mp.JoinableQueue[RUC | None],
-    result_queue: mp.Queue[LookupResult | WorkerDone],
+    result_queue: mp.Queue[ResultMessage | WorkerDoneMessage],
     settings: WorkerSettings,
 ) -> list[WorkerProcess]:
     entries: list[WorkerProcess] = []
@@ -154,7 +147,7 @@ def _start_workers(
 def _collect_results(
     *,
     worker_count: int,
-    result_queue: mp.Queue[LookupResult | WorkerDone],
+    result_queue: mp.Queue[ResultMessage | WorkerDoneMessage],
     processes: list[WorkerProcess],
     writer: OutputWriter,
     read_stats: ReadStats,
@@ -195,14 +188,14 @@ def _collect_results(
             msg = f"worker exited unexpectedly before sending summary states={states}"
             raise RuntimeError(msg) from None
 
-        if isinstance(item, WorkerDone):
+        if isinstance(item, WorkerDoneMessage):
             done += 1
             summary.processed += item.processed
             summary.succeeded += item.succeeded
             summary.failed += item.failed
             continue
 
-        writer.write(item)
+        writer.write(item.result)
 
     return summary
 
@@ -230,7 +223,7 @@ def run_dispatcher(
     task_queue: mp.JoinableQueue[RUC | None] = context.JoinableQueue(
         maxsize=worker_count * 100
     )
-    result_queue: mp.Queue[LookupResult | WorkerDone] = context.Queue()
+    result_queue: mp.Queue[ResultMessage | WorkerDoneMessage] = context.Queue()
 
     producer, produce_holder = _start_producer(
         cfg=cfg,
