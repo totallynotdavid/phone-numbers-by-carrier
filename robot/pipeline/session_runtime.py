@@ -6,7 +6,12 @@ import time
 
 from dataclasses import dataclass
 
-from robot.obs.events import SESSION_READY, STICKY_ACQUIRE, STICKY_RELEASE_FAILED
+from robot.obs.events import (
+    EGRESS_IP_UNRESOLVED,
+    SESSION_READY,
+    STICKY_ACQUIRE,
+    STICKY_RELEASE_FAILED,
+)
 from robot.obs.logging import kv
 from robot.providers.geonode import (
     GeoNodeConfig,
@@ -156,7 +161,8 @@ class SessionRuntime:
             return resolved
         if not self._active.egress_ip_warned:
             logger.warning(
-                "egress_ip_unresolved %s",
+                "%s %s",
+                EGRESS_IP_UNRESOLVED,
                 kv(
                     run_id=self._run_id,
                     worker_id=self._worker_id,

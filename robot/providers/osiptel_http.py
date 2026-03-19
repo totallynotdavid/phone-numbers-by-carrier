@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, TypedDict, cast
 import httpx
 
 from robot.domain.errors import BanSignalError, ParseError, TransientTransportError
-from robot.obs.events import FETCH_PAGE_OK, FETCH_PAGE_START
+from robot.obs.events import FETCH_PAGE_OK, FETCH_PAGE_START, OSIPTEL_REQUEST_FAILED
 from robot.obs.logging import kv
 
 
@@ -180,7 +180,8 @@ class OsiptelHttpClient:
         if status >= 500:
             response_text = response.text.replace("\n", " ").strip()[:160]
             logger.warning(
-                "osiptel_request_failed %s",
+                "%s %s",
+                OSIPTEL_REQUEST_FAILED,
                 kv(
                     status=status,
                     ruc=req.ruc,
