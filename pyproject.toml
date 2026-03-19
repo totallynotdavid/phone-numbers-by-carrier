@@ -21,9 +21,10 @@ dev = ["mypy>=1.19.1"]
 
 [project.scripts]
 robot = "robot.cli:main"
+robot-v2 = "v2.app.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["robot*"]
+include = ["robot*", "v2*"]
 
 # ruff config
 [tool.ruff]
