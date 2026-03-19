@@ -130,7 +130,7 @@ class Worker:
         )
         self._session_uses += 1
         self._maybe_rotate_session_after_success()
-        return Result(ruc=ruc, registered_lines=lines, status=Status.OK)
+        return Result(ruc=ruc, total_lines=lines, status=Status.OK)
 
     def _handle_failure(
         self, ruc: RUC, exc: RobotError, *, attempt_no: int, attempts: int

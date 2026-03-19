@@ -24,10 +24,17 @@ class Status(str, Enum):
     FAILED = "failed"
 
 
+@dataclass(frozen=True)
+class CarrierLines:
+    carrier: str
+    lines: int
+
+
 @dataclass
 class Result:
     ruc: RUC
-    registered_lines: int = 0
+    total_lines: int = 0
+    carrier_lines: tuple[CarrierLines, ...] = ()
     status: Status = Status.OK
     error_code: str = ""
     error_detail: str = ""

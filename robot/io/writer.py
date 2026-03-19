@@ -5,6 +5,8 @@ import threading
 
 from typing import TYPE_CHECKING
 
+from robot.domain import CarrierLines, Status
+
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -13,8 +15,16 @@ if TYPE_CHECKING:
 
 
 _HEADERS = {
-    "counts-only": ["ruc", "registered_lines"],
-    "detailed": ["ruc", "registered_lines", "status", "error_code", "error_detail"],
+    "counts-only": ["ruc", "carrier", "lines", "total_lines"],
+    "detailed": [
+        "ruc",
+        "carrier",
+        "lines",
+        "total_lines",
+        "status",
+        "error_code",
+        "error_detail",
+    ],
 }
 
 
@@ -42,18 +52,9 @@ class OutputWriter:
             self._file.flush()
 
     def write(self, result: Result) -> None:
-        if self._mode == "detailed":
-            row = [
-                result.ruc,
-                result.registered_lines,
-                result.status.value,
-                result.error_code,
-                result.error_detail,
-            ]
-        else:
-            row = [result.ruc, result.registered_lines]
+        rows = _rows_for_result(result, mode=self._mode)
         with self._lock:
-            self._writer.writerow(row)
+            self._writer.writerows(rows)
             self._file.flush()
 
     def close(self) -> None:
@@ -65,3 +66,40 @@ class OutputWriter:
 
     def __exit__(self, *_) -> None:
         self.close()
+
+
+def _rows_for_result(result: Result, *, mode: str) -> list[list[str | int]]:
+    if result.status == Status.FAILED:
+        if mode == "counts-only":
+            return []
+        return [
+            [
+                str(result.ruc),
+                "",
+                "",
+                result.total_lines,
+                result.status.value,
+                result.error_code,
+                result.error_detail,
+            ]
+        ]
+
+    rows: list[list[str | int]] = []
+    carriers = result.carrier_lines or (
+        CarrierLines(carrier="unknown", lines=result.total_lines),
+    )
+    for carrier_item in carriers:
+        carrier, lines = carrier_item.carrier, carrier_item.lines
+        base_row: list[str | int] = [str(result.ruc), carrier, lines, result.total_lines]
+        if mode == "detailed":
+            rows.append(
+                [
+                    *base_row,
+                    result.status.value,
+                    result.error_code,
+                    result.error_detail,
+                ]
+            )
+        else:
+            rows.append(base_row)
+    return rows

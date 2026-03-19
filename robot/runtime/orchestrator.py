@@ -95,7 +95,7 @@ def _run_snapshot(cfg: Config, pending: list[RUC], writer: OutputWriter) -> Summ
         for ruc in pending:
             with timed() as timer:
                 lines = provider.count_lines(ruc)
-            writer.write(Result(ruc=ruc, registered_lines=lines, status=Status.OK))
+            writer.write(Result(ruc=ruc, total_lines=lines, status=Status.OK))
             summary.processed += 1
             summary.succeeded += 1
             logger.info(
