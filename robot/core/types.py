@@ -12,11 +12,11 @@ _RUC_RE = re.compile(r"^\d{11}$")
 
 class RUC(UserString):
     def __init__(self, value: str) -> None:
-        v = value.strip()
-        if not _RUC_RE.match(v):
+        normalized = value.strip()
+        if not _RUC_RE.match(normalized):
             msg = f"invalid RUC {value!r}: must be 11 digits"
             raise ValueError(msg)
-        super().__init__(v)
+        super().__init__(normalized)
 
 
 class Status(str, Enum):
@@ -25,19 +25,38 @@ class Status(str, Enum):
 
 
 @dataclass(frozen=True)
-class CarrierLines:
+class CarrierCount:
     carrier: str
     lines: int
 
 
 @dataclass
-class Result:
+class LookupResult:
     ruc: RUC
+    status: Status
     total_lines: int = 0
-    carrier_lines: tuple[CarrierLines, ...] = ()
-    status: Status = Status.OK
+    carrier_counts: tuple[CarrierCount, ...] = ()
     error_code: str = ""
     error_detail: str = ""
     attempt: int = 0
     session_id: str = ""
     proxy_id: str = ""
+
+
+@dataclass
+class WorkerSummary:
+    processed: int = 0
+    succeeded: int = 0
+    failed: int = 0
+
+
+@dataclass
+class RunSummary:
+    rows_read: int = 0
+    valid: int = 0
+    ignored: int = 0
+    duplicates: int = 0
+    skipped: int = 0
+    processed: int = 0
+    succeeded: int = 0
+    failed: int = 0

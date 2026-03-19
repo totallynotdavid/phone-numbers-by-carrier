@@ -1,4 +1,4 @@
-from robot.runtime.orchestrator import run
+from robot.runtime import run
 
 
 __all__ = ["run"]

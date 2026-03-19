@@ -2,29 +2,12 @@ from __future__ import annotations
 
 import argparse
 
-from dataclasses import dataclass
 from pathlib import Path
 
-
-@dataclass(frozen=True)
-class Config:
-    input_csv: Path
-    output_csv: Path
-    page_size: int
-    workers: int
-    dedupe: bool
-    debug: bool
-    use_snapshot: bool
-    snapshot_json: Path | None
-    session_budget: int
-    wait_min_s: float
-    wait_max_s: float
-    same_session_retries: int
-    ban_cooldown_s: float
-    env_file: str
+from robot.config.schema import RunConfig
 
 
-def load(argv: list[str] | None = None) -> Config:
+def load_config(argv: list[str] | None = None) -> RunConfig:
     parser = argparse.ArgumentParser(prog="robot")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
@@ -32,8 +15,6 @@ def load(argv: list[str] | None = None) -> Config:
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--dedupe", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--debug", action="store_true", default=False)
-    parser.add_argument("--snapshot-mode", action="store_true", default=False)
-    parser.add_argument("--snapshot", type=Path, default=None)
     parser.add_argument("--session-budget", type=int, default=5)
     parser.add_argument("--wait-min-s", type=float, default=10.0)
     parser.add_argument("--wait-max-s", type=float, default=15.0)
@@ -57,20 +38,16 @@ def load(argv: list[str] | None = None) -> Config:
         errors.append("--same-session-retries must be >= 0")
     if ns.ban_cooldown_s < 0:
         errors.append("--ban-cooldown-s must be >= 0")
-    if ns.snapshot_mode and ns.snapshot is None:
-        errors.append("--snapshot required with --snapshot-mode")
     if errors:
         parser.error("; ".join(errors))
 
-    return Config(
+    return RunConfig(
         input_csv=ns.input,
         output_csv=ns.output,
         page_size=ns.page_size,
         workers=ns.workers,
         dedupe=ns.dedupe,
         debug=ns.debug,
-        use_snapshot=ns.snapshot_mode,
-        snapshot_json=ns.snapshot,
         session_budget=ns.session_budget,
         wait_min_s=ns.wait_min_s,
         wait_max_s=ns.wait_max_s,

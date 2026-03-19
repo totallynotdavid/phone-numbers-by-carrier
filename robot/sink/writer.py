@@ -6,13 +6,11 @@ import threading
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from robot.domain import RUC, CarrierLines, Status
+from robot.core.types import CarrierCount, LookupResult, Status
 
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from robot.domain import Result
 
 
 SUCCESS_HEADERS = ["ruc", "carrier", "lines", "total_lines"]
@@ -25,43 +23,6 @@ ERROR_HEADERS = [
     "proxy_id",
     "timestamp",
 ]
-
-
-def load_checkpoint(path: Path) -> set[str]:
-    if not path.exists() or path.stat().st_size == 0:
-        return set()
-
-    with path.open(newline="", encoding="utf-8") as file_obj:
-        reader = csv.reader(file_obj)
-        header = next(reader, [])
-        if header != SUCCESS_HEADERS:
-            msg = f"invalid output header in {path}: expected {SUCCESS_HEADERS}"
-            raise RuntimeError(msg)
-
-        seen: set[str] = set()
-        for line_no, row in enumerate(reader, start=2):
-            if len(row) != len(SUCCESS_HEADERS):
-                msg = (
-                    f"invalid output row width in {path}:{line_no}: "
-                    f"expected {len(SUCCESS_HEADERS)} columns"
-                )
-                raise RuntimeError(msg)
-
-            ruc_raw, _, lines_raw, total_raw = row
-            try:
-                ruc = RUC(ruc_raw)
-                lines = int(lines_raw)
-                total = int(total_raw)
-            except (TypeError, ValueError) as exc:
-                msg = f"invalid output row data in {path}:{line_no}"
-                raise RuntimeError(msg) from exc
-
-            if lines < 0 or total < 0:
-                msg = f"negative values are not allowed in {path}:{line_no}"
-                raise RuntimeError(msg)
-            seen.add(str(ruc))
-
-    return seen
 
 
 class OutputWriter:
@@ -81,7 +42,7 @@ class OutputWriter:
             self._error_writer.writerow(ERROR_HEADERS)
             self._error_file.flush()
 
-    def write(self, result: Result) -> None:
+    def write(self, result: LookupResult) -> None:
         success_rows, error_row = _rows_for_result(result)
         with self._lock:
             if success_rows:
@@ -104,7 +65,7 @@ class OutputWriter:
 
 
 def _rows_for_result(
-    result: Result,
+    result: LookupResult,
 ) -> tuple[list[list[str | int]], list[str] | None]:
     if result.status == Status.FAILED:
         return [], [
@@ -118,8 +79,8 @@ def _rows_for_result(
         ]
 
     rows: list[list[str | int]] = []
-    carriers = result.carrier_lines or (
-        CarrierLines(carrier="unknown", lines=result.total_lines),
+    carriers = result.carrier_counts or (
+        CarrierCount(carrier="unknown", lines=result.total_lines),
     )
     for carrier_item in carriers:
         rows.append(

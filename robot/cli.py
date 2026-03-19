@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import logging
 
-import robot.config as config
-
+from robot.config import load_config
 from robot.observability import configure_logging, kv, new_run_id
-from robot.runtime.orchestrator import run
+from robot.runtime import run
 
 
 def main(argv: list[str] | None = None) -> None:
-    cfg = config.load(argv)
+    cfg = load_config(argv)
     run_id = new_run_id()
 
     configure_logging(debug=cfg.debug)

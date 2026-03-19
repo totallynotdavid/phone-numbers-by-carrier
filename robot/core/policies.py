@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from robot.errors import (
+from robot.core.errors import (
     BanSignalError,
     CaptchaError,
     ParseError,
@@ -20,7 +20,7 @@ class RetryDecision:
     cooldown_proxy_s: float
 
 
-def decide(exc: RobotError, *, default_cooldown_s: float) -> RetryDecision:
+def decide_retry(exc: RobotError, *, default_cooldown_s: float) -> RetryDecision:
     if isinstance(exc, PermanentInputError):
         return RetryDecision(
             error_code="permanent_input_error",
@@ -56,7 +56,6 @@ def decide(exc: RobotError, *, default_cooldown_s: float) -> RetryDecision:
             rotate_session=True,
             cooldown_proxy_s=0.0,
         )
-
     return RetryDecision(
         error_code="provider_error",
         retry_same_session=False,

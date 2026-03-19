@@ -5,7 +5,7 @@ import csv
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from robot.domain import RUC
+from robot.core.types import RUC
 
 
 if TYPE_CHECKING:
@@ -27,11 +27,10 @@ def enqueue_rucs(
     path: Path,
     task_queue: Queue[RUC | None],
     *,
-    dedupe: bool = True,
-    checkpoint: set[str] | None = None,
+    dedupe: bool,
+    checkpoint: set[str],
 ) -> ReadStats:
     stats = ReadStats()
-    checkpoint = checkpoint or set()
     seen: set[str] = set()
 
     with path.open(newline="", encoding="utf-8-sig") as file_obj:
@@ -40,20 +39,25 @@ def enqueue_rucs(
             if not row or not row[0].strip():
                 stats.ignored += 1
                 continue
+
             try:
                 ruc = RUC(row[0])
             except ValueError:
                 stats.ignored += 1
                 continue
-            dedupe_key = str(ruc)
-            if dedupe and dedupe_key in seen:
+
+            normalized = str(ruc)
+            if dedupe and normalized in seen:
                 stats.duplicates += 1
                 continue
-            seen.add(dedupe_key)
+
+            seen.add(normalized)
             stats.valid += 1
-            if dedupe_key in checkpoint:
+
+            if normalized in checkpoint:
                 stats.skipped += 1
                 continue
+
             task_queue.put(ruc)
             stats.enqueued += 1
 
