@@ -90,7 +90,12 @@ def _rows_for_result(result: Result, *, mode: str) -> list[list[str | int]]:
     )
     for carrier_item in carriers:
         carrier, lines = carrier_item.carrier, carrier_item.lines
-        base_row: list[str | int] = [str(result.ruc), carrier, lines, result.total_lines]
+        base_row: list[str | int] = [
+            str(result.ruc),
+            carrier,
+            lines,
+            result.total_lines,
+        ]
         if mode == "detailed":
             rows.append(
                 [
