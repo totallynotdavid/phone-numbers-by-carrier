@@ -26,12 +26,14 @@ Environment
 
 Run
 
-Fresh run (default behavior overwrites output file, no checkpoint resume):
+Default behavior:
+- Success rows are appended to `out.csv`.
+- Failed rows are appended to `out.errors.csv`.
+- If `out.csv` already has RUCs, they are skipped automatically.
 
 uv run robot \
   --input samples.csv \
   --output out.csv \
-  --output-mode detailed \
   --workers 1 \
   --page-size 100 \
   --session-budget 2 \
@@ -40,19 +42,3 @@ uv run robot \
   --same-session-retries 1 \
   --ban-cooldown-s 180 \
   --env-file .env
-
-Resume mode (append to existing output and skip already processed RUCs):
-
-uv run robot \
-  --input samples.csv \
-  --output out.csv \
-  --output-mode detailed \
-  --workers 1 \
-  --page-size 100 \
-  --session-budget 2 \
-  --wait-min-s 10 \
-  --wait-max-s 15 \
-  --same-session-retries 1 \
-  --ban-cooldown-s 180 \
-  --env-file .env \
-  --resume
