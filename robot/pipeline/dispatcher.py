@@ -47,7 +47,7 @@ def _worker_entry(
     result_queue: mp.Queue[ResultMessage | WorkerDoneMessage],
     settings: WorkerSettings,
 ) -> None:
-    configure_logging(debug=settings.debug)
+    configure_logging(debug=settings.debug, run_id=run_id)
     geonode = load_geonode_config(env_file=geonode_env_file)
 
     class _QueueWriter:
@@ -150,15 +150,8 @@ def _collect_results(
     result_queue: mp.Queue[ResultMessage | WorkerDoneMessage],
     processes: list[WorkerProcess],
     writer: OutputWriter,
-    read_stats: ReadStats,
 ) -> RunSummary:
-    summary = RunSummary(
-        rows_read=read_stats.rows_read,
-        valid=read_stats.valid,
-        ignored=read_stats.ignored,
-        duplicates=read_stats.duplicates,
-        skipped=read_stats.skipped,
-    )
+    summary = RunSummary()
 
     done = 0
     reported_dead: set[int] = set()
@@ -240,27 +233,29 @@ def run_dispatcher(
         result_queue=result_queue,
         settings=settings,
     )
-    producer.join()
-    produce_result = produce_holder["result"]
-    if produce_result.error is not None:
-        _join_workers(processes)
-        msg = f"failed while reading input: {produce_result.error}"
-        raise RuntimeError(msg)
-
-    read_stats = produce_result.read_stats
-    if read_stats.valid == 0:
-        _join_workers(processes)
-        msg = "no valid RUCs in input"
-        raise RuntimeError(msg)
-
     summary = _collect_results(
         worker_count=worker_count,
         result_queue=result_queue,
         processes=processes,
         writer=writer,
-        read_stats=read_stats,
     )
+    producer.join()
+    produce_result = produce_holder["result"]
     task_queue.join()
     _join_workers(processes)
+
+    if produce_result.error is not None:
+        msg = f"failed while reading input: {produce_result.error}"
+        raise RuntimeError(msg)
+
+    read_stats = produce_result.read_stats
+    summary.rows_read = read_stats.rows_read
+    summary.valid = read_stats.valid
+    summary.ignored = read_stats.ignored
+    summary.duplicates = read_stats.duplicates
+    summary.skipped = read_stats.skipped
+    if read_stats.valid == 0:
+        msg = "no valid RUCs in input"
+        raise RuntimeError(msg)
 
     return summary
