@@ -178,21 +178,31 @@ class SessionRuntime:
         return self._last_proxy_id
 
     def _release_session(self, session: ProxySessionConfig) -> None:
-        ok, status, error = release_proxy_session(
-            config=self._geonode,
-            session_id=session.session_id,
-            port=int(session.port),
-            timeout_s=10.0,
-        )
-        if not ok:
-            logger.warning(
-                "%s %s",
-                STICKY_RELEASE_FAILED,
-                kv(
-                    proxy_id=session.proxy_id,
-                    session_id=session.session_id,
-                    port=session.port,
-                    status=status,
-                    error=error,
-                ),
+        last_status = 0
+        last_error = ""
+        for attempt in range(1, 4):
+            ok, status, error = release_proxy_session(
+                config=self._geonode,
+                session_id=session.session_id,
+                port=int(session.port),
+                timeout_s=10.0,
             )
+            if ok:
+                return
+            last_status = status
+            last_error = error
+            if attempt < 3:
+                time.sleep(0.5 * attempt)
+
+        logger.warning(
+            "%s %s",
+            STICKY_RELEASE_FAILED,
+            kv(
+                proxy_id=session.proxy_id,
+                session_id=session.session_id,
+                port=session.port,
+                status=last_status,
+                error=last_error,
+                attempts=3,
+            ),
+        )

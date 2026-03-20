@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from selenium.common.exceptions import WebDriverException
 from seleniumbase import SB  # type: ignore[import-untyped]
 
-from robot.domain.errors import CaptchaError, TransientTransportError
+from robot.domain.errors import BanSignalError, CaptchaError, TransientTransportError
 from robot.obs.events import SESSION_OPEN
 from robot.obs.logging import kv, new_session_id
 
@@ -110,9 +110,12 @@ class BrowserSession:
             self.close()
             msg = f"failed to open browser session: {type(exc).__name__}: {exc}"
             raise TransientTransportError(msg) from exc
-        except Exception:
+        except Exception as exc:
             self.close()
-            raise
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            msg = f"failed to open browser session: {type(exc).__name__}: {exc}"
+            raise TransientTransportError(msg) from exc
 
     def close(self) -> None:
         if self._sb_cm is None:
@@ -201,6 +204,9 @@ class BrowserSession:
             f"gc={last_state.get('gc', '')} "
             f"has_key={bool(last_state.get('key'))}"
         )
+        title = str(last_state.get("title", "")).lower()
+        if "requested has been blocked" in title:
+            raise BanSignalError(msg)
         raise TransientTransportError(msg)
 
     def _require_sb(self) -> SB:

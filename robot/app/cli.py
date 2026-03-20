@@ -12,7 +12,7 @@ def main(argv: list[str] | None = None) -> None:
     cfg = load_config(argv)
     run_id = new_run_id()
 
-    configure_logging(debug=cfg.debug)
+    configure_logging(debug=cfg.debug, run_id=run_id)
     logging.getLogger(__name__).info("%s %s", RUN_START, kv(run_id=run_id))
 
     run(cfg, run_id=run_id)
