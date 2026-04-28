@@ -10,7 +10,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludedimports=[],
-    noarchive=False,
+    noarchive=True,
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
@@ -25,7 +25,7 @@ exe = EXE(
     name='robot',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,
+    strip=True,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
