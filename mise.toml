@@ -17,3 +17,6 @@ run = ["ruff format", "ruff check --fix"]
 
 [tasks.check]
 run = "uv run mypy ."
+
+[tasks.build]
+run = "uv run pyinstaller robot.spec"

@@ -17,7 +17,7 @@ authors = [
 ]
 
 [project.optional-dependencies]
-dev = ["mypy>=1.20.2"]
+dev = ["mypy>=1.20.2", "pyinstaller>=6.14.1"]
 
 [project.scripts]
 robot = "robot.app.cli:main"
@@ -87,3 +87,8 @@ order-by-type = true
 relative-imports-order = "closest-to-furthest"
 extra-standard-library = ["typing"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.20.0",
+]

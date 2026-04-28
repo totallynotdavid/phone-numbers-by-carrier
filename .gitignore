@@ -1,8 +1,15 @@
-.debug
-__pycache__
-.pytest_cache
+# python artifacts
+__pycache__/
+.pytest_cache/
 
-*.egg-info
-build
+# build artifacts
+build/
+dist/
+*.egg-info/
+*.spec
+
+# files
 *.csv
 .env
+
+.debug
